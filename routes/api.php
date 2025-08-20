@@ -20,5 +20,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::post('/payment/create', [PaymentController::class, 'createTransaction']);
+Route::post('/payment/qris', [PaymentController::class, 'createQris']);
 Route::post('/payment/callback', [PaymentController::class, 'callback']);
-

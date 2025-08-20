@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Midtrans\Config;
 use Midtrans\Snap;
+use Midtrans\CoreApi;
 
 class MidtransService
 {
@@ -30,5 +31,23 @@ class MidtransService
         ];
 
         return Snap::createTransaction($params);
+    }
+
+    public function createQrisPayment($orderId, $amount, $customer)
+    {
+        $params = [
+            "payment_type" => "qris",
+            "transaction_details" => [
+                "order_id" => $orderId,
+                "gross_amount" => $amount,
+            ],
+            "customer_details" => [
+                "first_name" => $customer['name'],
+                "email" => $customer['email'],
+                "phone" => $customer['phone'],
+            ]
+        ];
+
+        return CoreApi::charge($params);
     }
 }

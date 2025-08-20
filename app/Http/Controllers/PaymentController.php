@@ -42,25 +42,68 @@ class PaymentController extends Controller
         ]);
     }
 
-    // Callback dari Midtrans
-    public function callback(Request $request)
-    {
-        $data = $request->all();
+    // Callback dari Midtrans snap
+    // public function callback(Request $request)
+    // {
+    //     $data = $request->all();
 
-        // Validasi signature key midtrans
-        $signatureKey = hash(
-            'sha512',
-            $data['order_id'] . $data['status_code'] . $data['gross_amount'] . config('midtrans.server_key')
+    //     // Validasi signature key midtrans
+    //     $signatureKey = hash(
+    //         'sha512',
+    //         $data['order_id'] . $data['status_code'] . $data['gross_amount'] . config('midtrans.server_key')
+    //     );
+
+    //     if ($signatureKey !== $data['signature_key']) {
+    //         return response()->json(['message' => 'Invalid signature'], 403);
+    //     }
+
+    //     // Simpan status pembayaran ke database (sesuai kebutuhan)
+    //     // Contoh:
+    //     // Order::where('order_id', $data['order_id'])->update(['payment_status' => $data['transaction_status']]);
+
+    //     return response()->json(['message' => 'Callback processed']);
+    // }
+
+    public function createQris(Request $request)
+    {
+        $request->validate([
+            'order_id' => 'required|string',
+            'amount'   => 'required|numeric|min:1000',
+            'name'     => 'required|string',
+            'email'    => 'required|email',
+            'phone'    => 'required|string',
+        ]);
+
+        $payment = $this->midtrans->createQrisPayment(
+            $request->order_id,
+            $request->amount,
+            [
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+            ]
         );
 
-        if ($signatureKey !== $data['signature_key']) {
-            return response()->json(['message' => 'Invalid signature'], 403);
+        return response()->json($payment);
+    }
+
+    // Endpoint untuk menerima callback dari Midtrans
+    public function callback(Request $request)
+    {
+        // simpan log dulu
+        // \Log::info('Midtrans Callback: ', $request->all());
+
+        $transactionStatus = $request->transaction_status;
+        $orderId = $request->order_id;
+
+        if ($transactionStatus == 'settlement') {
+            // update status transaksi di DB jadi PAID
+        } elseif ($transactionStatus == 'pending') {
+            // update status transaksi jadi PENDING
+        } elseif ($transactionStatus == 'expire') {
+            // update status transaksi jadi EXPIRED
         }
 
-        // Simpan status pembayaran ke database (sesuai kebutuhan)
-        // Contoh:
-        // Order::where('order_id', $data['order_id'])->update(['payment_status' => $data['transaction_status']]);
-
-        return response()->json(['message' => 'Callback processed']);
+        return response()->json(['message' => 'Callback received']);
     }
 }
